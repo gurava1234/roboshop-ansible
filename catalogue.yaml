@@ -1,5 +1,5 @@
 - name: catalogue 
-  host: catalogue
+  hosts: catalogue
   become: yes
   tasks:
   - name: disable old nodejs and enable nodejs:18
@@ -9,5 +9,5 @@
     ansible.builtin.dnf:
       name: nodejs
       state: present
-      
+
 
