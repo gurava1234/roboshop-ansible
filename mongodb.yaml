@@ -17,19 +17,7 @@
         name: mongod
         state: started
         enabled: true
-
-    - name: Allow remote connections to MongoDB
-      ansible.builtin.lineinfile:
-        path: /etc/mongod.conf
-        regexp: '127\.0\.0\.1'
-        line: '0.0.0.0'
-        backrefs: yes
-
-    - name: Restart MongoDB service to apply configuration changes
-      ansible.builtin.service:
-        name: mongod
-        state: restarted
-  
+        
   - name: allow remote connections
     ansible.builtin.service:
       path: /etc/mongod.conf
