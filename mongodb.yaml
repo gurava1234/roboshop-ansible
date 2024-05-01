@@ -22,8 +22,7 @@
       ansible.builtin.lineinfile:
         path: /etc/mongod.conf
         regexp: '127.0.0.1'
-        line: '0.0.0.0'
-        backrefs: yes
+        replace: '0.0.0.0'
 
     - name: Restart MongoDB to apply configuration changes
       ansible.builtin.service:
