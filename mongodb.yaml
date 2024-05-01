@@ -21,11 +21,14 @@
     - name: Allow remote connections to MongoDB
       ansible.builtin.lineinfile:
         path: /etc/mongod.conf
-        regexp: '127.0.0.1'
-        replace: '0.0.0.0'
+        regexp: '^bindIp: 127.0.0.1'
+        line: 'bindIp: 0.0.0.0'
+        backrefs: yes
 
     - name: Restart MongoDB to apply configuration changes
       ansible.builtin.service:
         name: mongod
         state: restarted
+
+
 
