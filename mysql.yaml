@@ -3,7 +3,7 @@
   become: yes
   tasks:
   - name: disable current version of mysql
-    ansible.builtin.command:
+    ansible.builtin.command: dnf module disable mysql -y
    
   - name: setup mysql15.7 repo
     ansible.builtin.copy:
@@ -23,4 +23,4 @@
 
   - name: setup root password
     anisble.builtin.command: mysql_secure_installation --set-root-pass RoboShop@1
-    
+
