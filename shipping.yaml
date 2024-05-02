@@ -38,13 +38,11 @@
         creates: "/app/shipping"
 
     - name: install dependencies
-      ansible.builtin.command:
-        cmd: mvn clean package
+      ansible.builtin.command: mvn clean package
         chdir: "/app/shipping"
 
     - name: rename jar file
-      ansible.builtin.command:
-        cmd: mv target/shipping-1.0.jar shipping.jar
+      ansible.builtin.command: mv target/shipping-1.0.jar shipping.jar
         chdir: "/app/shipping"
 
     - name: copy shipping service file
