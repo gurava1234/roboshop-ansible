@@ -2,80 +2,77 @@
   hosts: shipping
   become: yes
   vars:
-    mysql_password: "RoboShop@1"
-
+    mysql_password: RoboShop@1
   tasks:
-    - name: install maven
-      ansible.builtin.dnf:
-        name: maven
-        state: present
+  - name: install maven
+    ansible.builtin.dnf:
+      name: maven
+      state: present
 
-    - name: create roboshop user
-      ansible.builtin.user:
-        name: roboshop
-        system: no
+  - name: create roboshop user
+    ansible.builtin.user:
+      name: roboshop
 
-    - name: Recursively remove app directory
-      ansible.builtin.file:
-        path: /app
-        state: absent
+  - name: Recursively remove app directory
+    ansible.builtin.file:
+      path: /path
+      state: absent
+  
+  - name: create app directory
+    ansible.builtin.file:
+      path: /app
+      state: directory
+  
+  - name: download shipping application
+    ansible.builtin.get_url:
+      url: https://roboshop-builds.s3.amazonaws.com/shipping.zip
+      dest: /tmp
 
-    - name: create app directory
-      ansible.builtin.file:
-        path: /app
-        state: directory
+  - name: extract shipping application
+    ansible.builtin.unarchive:
+      src: /tmp/shipping.zip
+      remote_src: yes
+      
+  - name: install dependencies
+    ansible.builtin.command: mvn clean package
+    args:
+      chdir: /app
 
-    - name: download shipping application
-      ansible.builtin.get_url:
-        url: "https://roboshop-builds.s3.amazonaws.com/shipping.zip"
-        dest: "/tmp/shipping.zip"
+  - name: rename jar file
+    ansible.builtin.command: mv target/shipping-1.0.jar shipping.jar
+    args:
+      chdir: /app
 
-    - name: extract shipping application
-      ansible.builtin.unarchive:
-        src: "/tmp/shipping.zip"
-        dest: "/app"
-        remote_src: yes
-        creates: "/app/shipping"
+  - name: copy shipping service
+    ansible.builtin.copy:
+      src: shipping.service
+      dest: /etc/systemd/system/shipping.service
 
-    - name: install dependencies
-      ansible.builtin.command: mvn clean package
-        chdir: "/app/shipping"
+  - name: deamon reaload and start
+    ansible.builtin.systems_service:
+      deamon_reload: true
 
-    - name: rename jar file
-      ansible.builtin.command: mv target/shipping-1.0.jar shipping.jar
-        chdir: "/app/shipping"
+  - name: install mysql  client
+    ansible.builtin.dnf:
+      name: mysql 
+      state: present
 
-    - name: copy shipping service file
-      ansible.builtin.copy:
-        src: "shipping.service"
-        dest: "/etc/systemd/system/shipping.service"
+  - name: check cities schema exists or not 
+    ansible.builtin.command: mysql -h mysql.daws76s.cfd -uroot -p{{mysql_password}} -sN -e "SELECT COUNT(*) FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = 'cities' "
+    register: schema
 
-    - name: daemon reload and start service
-      ansible.builtin.systemd:
-        name: shipping
-        state: started
-        enabled: yes
-        daemon_reload: true
+  - name: print output
+    ansible.builtin.debug:
+      msg: "schema output: {{schema}}"
 
-    - name: install mysql client
-      ansible.builtin.dnf:
-        name: mysql
-        state: present
+  - name: load cities data
+    ansible.builtin.shell: "mysql -h mysql.daws76s.cfd -uroot -p{{mysql_password}} < /app/schema/shipping.sql"
+    when: schema.stdout != "1"
 
-    - name: check if cities schema exists
-      ansible.builtin.shell:
-        cmd: mysql -h mysql.daws76s.cfd -uroot -p"{{ mysql_password }}" -sN -e "SELECT COUNT(*) FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = 'cities'"
-      register: schema
-      changed_when: false
-      failed_when: schema.rc != 0
-
-    - name: print output of schema check
-      ansible.builtin.debug:
-        msg: "schema output: {{ schema.stdout }}"
-
-    - name: load cities data if not exists
-      ansible.builtin.shell:
-        cmd: "mysql -h mysql.daws76s.cfd -uroot -p{{ mysql_password }} < /app/schema/shipping.sql"
-      when: schema.stdout == "0"
+  - name: start and enable shipping data
+    ansible.builtin.service:
+     name: shipping
+     state: restarted
+     enabled: yes
  
   
